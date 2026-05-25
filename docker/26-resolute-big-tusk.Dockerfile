@@ -40,10 +40,10 @@ ARG MS_GITHUB_PAT
 
 ENV MS_GITHUB_PAT=${MS_GITHUB_PAT?ms_github_pat_not_set}
 ENV TESTNAME="cpsc-120-env-test"
-ENV ENVTEST_TAG="v1.2"
+ENV ENVTEST_TAG="v1.4"
 
 ADD --chown=tuffy:tuffy \
-    https://$MS_GITHUB_PAT@github.com/csufcs/${TESTNAME}.git#$ENVTEST_TAG /$TESTNAME
+    https://$MS_GITHUB_PAT@github.com/cpsc-120/${TESTNAME}.git#$ENVTEST_TAG /$TESTNAME
 # WORKDIR /$TESTNAME
 # RUN ./git-test.sh
 WORKDIR /$TESTNAME/part-1

@@ -7,7 +7,8 @@
 # export MS_SKIP_PUSH="yes" to skip push to Docker and GitHub
 # 
 
-PROJECT_ROOT="/home/mshafae/github/tusk/docker"
+#PROJECT_ROOT="/home/mshafae/github/tusk/docker"
+PROJECT_ROOT="/mnt/hgfs/github/tusk/docker"
 RELEASES="26-resolute"
 ALPINE_RELEASES="3"
 PROJECT="tusk"
