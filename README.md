@@ -1,6 +1,6 @@
 # TUSK Image Builder
 
-This repository is a trimmed build and packaging repo for the CSUF C++ Refresher container image.
+This repository is a focused build and packaging repo for a shared CSUF teaching container image.
 
 It keeps only the pieces needed to:
 
@@ -21,7 +21,7 @@ It keeps only the pieces needed to:
 3. Build the image:
 
 ```bash
-IMAGE_OWNER=CPP-Refresher-Su2026 \
+IMAGE_OWNER=YourOrg \
 IMAGE_NAME=26-resolute-small-tusk \
 ./mkdockerimage.sh
 ```
