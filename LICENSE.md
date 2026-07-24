@@ -1,4 +1,4 @@
-Copyright (c) 2021, Michael Shafae
+Copyright (c) 2021, Michael Shafae<br/>
 Copyright (c) 2026, Paul Inventado
 
 Redistribution and use in source and binary forms, with or without
