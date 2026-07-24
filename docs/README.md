@@ -39,12 +39,6 @@ The script currently expects a size name such as:
 
 If you create a new image name, update the script so it maps that size to the new Dockerfile.
 
-## Package list
-
-If your image needs different default tools, edit `packages/base.txt`.
-
-Keep the package list small and intentional.
-
 ## Build flow
 
 The build works like this:
