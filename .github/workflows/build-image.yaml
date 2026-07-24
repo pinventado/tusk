@@ -1,118 +1,56 @@
-name: Build and Publish TUSK Image
+- name: Prepare build compatibility wrapper
+  shell: bash
+  run: |
+    set -euo pipefail
 
-on:
-  workflow_dispatch:
-    inputs:
-      image_owner:
-        description: GHCR owner or organization
-        required: false
-        default: pinventado
-      image_name:
-        description: Image name in GHCR
-        required: false
-        default: 26-resolute-small-tusk
-      ubuntu_codename:
-        description: Ubuntu codename for the build
-        required: false
-        default: resolute
+    WRAPPER_DIR="${RUNNER_TEMP}/tusk-build-bin"
+    mkdir -p "${WRAPPER_DIR}"
 
-  push:
-    tags:
-      - "image-*"
+    cat > "${WRAPPER_DIR}/sudo" <<'EOF'
+    #!/bin/bash
+    set -euo pipefail
 
-permissions:
-  contents: read
-  packages: write
+    REAL_SUDO="/usr/bin/sudo"
 
-jobs:
-  build-and-push:
-    runs-on: ubuntu-24.04
+    if [ "${1:-}" = "debootstrap" ]; then
+      shift
 
-    env:
-      IMAGE_OWNER: ${{ github.event.inputs.image_owner || github.repository_owner }}
-      IMAGE_NAME: ${{ github.event.inputs.image_name || '26-resolute-small-tusk' }}
-      UBUNTU_CODENAME: ${{ github.event.inputs.ubuntu_codename || 'resolute' }}
+      DIST="${1:?Missing Ubuntu distribution codename}"
+      TARGET="${2:?Missing debootstrap target directory}"
+      shift 2
 
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      "${REAL_SUDO}" /usr/sbin/debootstrap \
+        --include=sudo \
+        "${DIST}" \
+        "${TARGET}" \
+        "$@"
 
-      - name: Install build tools
-        run: |
-          set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y debootstrap
+      # Add the Ubuntu components needed by packages.txt.
+      cat <<APT_SOURCES | "${REAL_SUDO}" tee "${TARGET}/etc/apt/sources.list" >/dev/null
+    deb http://archive.ubuntu.com/ubuntu ${DIST} main restricted universe multiverse
+    deb http://archive.ubuntu.com/ubuntu ${DIST}-updates main restricted universe multiverse
+    deb http://archive.ubuntu.com/ubuntu ${DIST}-backports main restricted universe multiverse
+    deb http://security.ubuntu.com/ubuntu ${DIST}-security main restricted universe multiverse
+    APT_SOURCES
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      "${REAL_SUDO}" mkdir -p "${TARGET}/packages"
+      "${REAL_SUDO}" chown \
+        "$(id -u):$(id -g)" \
+        "${TARGET}/packages"
 
-      - name: Prepare build compatibility wrapper
-        shell: bash
-        run: |
-          set -euo pipefail
+      exit 0
+    fi
 
-          WRAPPER_DIR="${RUNNER_TEMP}/tusk-build-bin"
-          mkdir -p "${WRAPPER_DIR}"
+    # Preserve the source list created above when mkdockerimage.sh tries
+    # to replace it with the GitHub runner's source list.
+    if [ "${1:-}" = "tee" ] &&
+       [ "${2:-}" = "etc/apt/sources.list" ]; then
+      cat >/dev/null
+      exit 0
+    fi
 
-          cat > "${WRAPPER_DIR}/sudo" <<'EOF'
-          #!/bin/bash
-          set -euo pipefail
+    exec "${REAL_SUDO}" "$@"
+    EOF
 
-          REAL_SUDO="/usr/bin/sudo"
-
-          # Intercept:
-          #
-          #   sudo debootstrap DIST TARGET
-          #
-          # Include sudo because quickinstall.sh invokes sudo from inside
-          # the chroot, and make packages writable by the Actions user.
-          if [ "${1:-}" = "debootstrap" ]; then
-            shift
-
-            DIST="${1:?Missing Ubuntu distribution codename}"
-            TARGET="${2:?Missing debootstrap target directory}"
-            shift 2
-
-            "${REAL_SUDO}" /usr/sbin/debootstrap \
-              --include=sudo \
-              "${DIST}" \
-              "${TARGET}" \
-              "$@"
-
-            "${REAL_SUDO}" mkdir -p "${TARGET}/packages"
-            "${REAL_SUDO}" chown \
-              "$(id -u):$(id -g)" \
-              "${TARGET}/packages"
-
-            exit 0
-          fi
-
-          # mkdockerimage.sh tries to overwrite the source list created by
-          # debootstrap with the runner's /etc/apt/sources.list.
-          #
-          # Ubuntu Actions runners use deb822 sources elsewhere, so that
-          # replacement may contain no usable repository definitions.
-          # Consume the incoming data but preserve debootstrap's valid file.
-          if [ "${1:-}" = "tee" ] &&
-             [ "${2:-}" = "etc/apt/sources.list" ]; then
-            cat >/dev/null
-            exit 0
-          fi
-
-          # Forward every other sudo command normally.
-          exec "${REAL_SUDO}" "$@"
-          EOF
-
-          chmod +x "${WRAPPER_DIR}/sudo"
-          echo "${WRAPPER_DIR}" >> "${GITHUB_PATH}"
-
-      - name: Build and publish image
-        env:
-          SKIP_DOCKER_LOGIN: yes
-        run: |
-          set -euo pipefail
-          ./mkdockerimage.sh "${UBUNTU_CODENAME}"
+    chmod +x "${WRAPPER_DIR}/sudo"
+    echo "${WRAPPER_DIR}" >> "${GITHUB_PATH}"
