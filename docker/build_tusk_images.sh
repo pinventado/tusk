@@ -5,7 +5,6 @@
 # build_images.sh [big | small]
 #
 # export MS_SKIP_PUSH="yes" to skip push to Docker and GitHub
-# export MS_SKIP_DOCKER_PUSH="yes" to skip Docker Hub and still push to GHCR
 # 
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -213,13 +212,8 @@ main () {
         fi
         
         if [ "x${MS_SKIP_PUSH}" = "x" -a "x${DRYRUN}" = "xno" ]; then
-            if [ "x${MS_SKIP_DOCKER_PUSH}" = "xyes" ]; then
-                echo "Skipping Docker registry push"
-            else
-                echo "Pushing image to Docker registry"
-                push_docker_image ${TARGET} ${IMAGE_ID} ${DATE} || exit 1
-            fi
-
+            echo "Pushing image to Docker registry"
+            push_docker_image ${TARGET} ${IMAGE_ID} ${DATE} || exit 1
             echo "Pushing image to GitHub registry"
             push_ghcr_image ${TARGET} ${IMAGE_ID} ${DATE} || exit 1
         fi
