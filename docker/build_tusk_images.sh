@@ -38,7 +38,7 @@ build_docker_image () {
     # Warning: Don't echo anything for debugging because the ID is 
     # being returned as an echo statement at the end.
     _TARGET=$1
-    _ID=$(docker buildx build --quiet --build-arg MS_GITHUB_PAT=${MS_GITHUB_PAT} --target final --tag ${_TARGET} --file ${_TARGET}.Dockerfile .)
+    _ID=$(docker buildx build --load --quiet --build-arg MS_GITHUB_PAT=${MS_GITHUB_PAT} --target final --tag ${_TARGET} --file ${_TARGET}.Dockerfile .)
     if [ $_ID ]; then
         echo "$_ID"
     else
