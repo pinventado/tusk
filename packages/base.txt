@@ -1,4 +1,4 @@
-# 2024-08-24-00
+# 2026-07-23-00
 aptitude
 autoconf
 automake
@@ -11,6 +11,7 @@ clang-format
 clang-tidy
 cmake
 curl
+gh
 dirmngr
 doxygen
 enscript

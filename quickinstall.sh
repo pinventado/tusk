@@ -2,7 +2,7 @@
 #
 # Quick Install script to get an Ubuntu system up and running.
 #
-# Tested on Ubuntu 24.04 LTS amd64
+# Tested on Ubuntu 26.04 LTS amd64
 #
 # Reminder on how to run this script on Vagrant for testing:
 # wget -q https://raw.githubusercontent.com/mshafae/tusk/main/quickinstall.sh
@@ -24,9 +24,9 @@
 #   The URL used for apt; used in conjunction with TUSK_APT_SOURCES_OVERRIDE
 #   The default value is http://us.archive.ubuntu.com/ubuntu/
 # TUSK_PACKAGE_SRC
-#   The URL for a list of packages to install. One package per line.
-#   The default value is
-#   https://raw.githubusercontent.com/mshafae/tusk/main/packages.txt
+#   The path or URL for a list of packages to install. One package per line.
+#   The default value is /packages/base.txt, which is copied into the build
+#   rootfs by mkdockerimage.sh.
 # TUSK_INSTALL_DOCKER
 #   Set to "YES" to install Docker.
 #   The default value is nil.
@@ -421,9 +421,16 @@ fi
 
 
 # Install packages
-PACKAGE_SRC=${TUSK_PACKAGE_SRC:-"https://raw.githubusercontent.com/mshafae/tusk/main/packages/base.txt"}
+PACKAGE_SRC=${TUSK_PACKAGE_SRC:-"/packages/base.txt"}
 PACKAGES_FILE="/tmp/packages-$$.txt"
-wget -q ${PACKAGE_SRC} -O ${PACKAGES_FILE}
+case "${PACKAGE_SRC}" in
+    http://*|https://*|ftp://*)
+        wget -q "${PACKAGE_SRC}" -O "${PACKAGES_FILE}"
+        ;;
+    *)
+        cp "${PACKAGE_SRC}" "${PACKAGES_FILE}"
+        ;;
+esac
 if [ $? -ne 0 ]; then
     echo "Could not fetch package list from ${PACKAGE_SRC}. Exiting."
     exit 1
