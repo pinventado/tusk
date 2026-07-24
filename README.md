@@ -29,6 +29,15 @@ IMAGE_NAME=26-resolute-small-tusk \
 4. Confirm the image is available locally.
 5. Push it to GHCR.
 
+## Build trigger
+
+The repository includes a GitHub Actions workflow that builds the image on demand or when you push a tag that starts with `image-`.
+
+That means normal commits do not rebuild the image. To start a build, either:
+
+1. use the `workflow_dispatch` button in GitHub Actions, or
+2. push a tag such as `image-2026-07-24`.
+
 ## Notes
 
 - The default build targets Ubuntu 26.04 LTS, codename `resolute`.

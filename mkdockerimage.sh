@@ -94,7 +94,9 @@ ID=$(sudo tar -C "${TARGET}" -c . | sudo docker import - "${TARGET}")
 sudo docker image ls -a
 
 echo "Are you logged into GHCR?"
-docker login ghcr.io
+if [ "${SKIP_DOCKER_LOGIN:-no}" != "yes" ]; then
+    docker login ghcr.io
+fi
 
 # See https://github.com/moby/moby/blob/master/contrib/mkimage-alpine.sh
 docker tag "${ID}" "ghcr.io/${IMAGE_OWNER}/${IMAGE_NAME}:${DATE}"

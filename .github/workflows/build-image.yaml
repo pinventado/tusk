@@ -1,0 +1,51 @@
+name: Build and Publish TUSK Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_owner:
+        description: GHCR owner or organization
+        required: false
+        default: pinventado
+      image_name:
+        description: Image name in GHCR
+        required: false
+        default: 26-resolute-small-tusk
+      ubuntu_codename:
+        description: Ubuntu codename for the build
+        required: false
+        default: resolute
+  push:
+    tags:
+      - "image-*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_OWNER: ${{ github.event.inputs.image_owner || github.repository_owner }}
+      IMAGE_NAME: ${{ github.event.inputs.image_name || '26-resolute-small-tusk' }}
+      UBUNTU_CODENAME: ${{ github.event.inputs.ubuntu_codename || 'resolute' }}
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y debootstrap
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and publish image
+        env:
+          SKIP_DOCKER_LOGIN: yes
+        run: |
+          set -euo pipefail
+          ./mkdockerimage.sh "${UBUNTU_CODENAME}"
