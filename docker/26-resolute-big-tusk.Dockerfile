@@ -2,9 +2,9 @@
    
 FROM ubuntu:resolute AS intermediate
 
-LABEL org.opencontainers.image.authors="Michael Shafae <mshafae@fullerton.edu>"
+LABEL org.opencontainers.image.authors="Paul Inventado <pinventado@fullerton.edu>"
 LABEL org.opencontainers.image.title="24-resolute-big-tusk"
-LABEL org.opencontainers.image.source="https://github.com/mshafae/tusk"
+LABEL org.opencontainers.image.source="https://github.com/pinventado/tusk"
 LABEL org.opencontainers.image.description="A development container based on Ubuntu 26 (Resolute) with clang/LLVM for Makefile based C++ projects; includes an unprivileged user 'tuffy' with git configured for command line usage. The 'big' image includes gsfonts and GraphicsMagick. Localized to C.UTF-8 and set in PDT timezone."
 
 # Set locale
