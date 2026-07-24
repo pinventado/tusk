@@ -38,6 +38,22 @@ That means normal commits do not rebuild the image. To start a build, either:
 1. use the `workflow_dispatch` button in GitHub Actions, or
 2. push a tag such as `image-2026-07-24`.
 
+## Release commands
+
+From a local clone of this fork, the exact commands for a tag-triggered build are:
+
+```bash
+git tag image-2026-07-24
+git push origin image-2026-07-24
+```
+
+If you want to delete and recreate the tag locally before pushing it again:
+
+```bash
+git tag -d image-2026-07-24
+git push origin :refs/tags/image-2026-07-24
+```
+
 ## Notes
 
 - The default build targets Ubuntu 26.04 LTS, codename `resolute`.

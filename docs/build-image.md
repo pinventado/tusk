@@ -64,6 +64,24 @@ If you are building for your own organization, the pushed image will look like:
 ghcr.io/YourOrg/YourImage:latest
 ```
 
+## Triggering a build from git
+
+The repository is configured so normal commits do not rebuild the image.
+
+To trigger the GitHub Actions workflow from a local checkout, run:
+
+```bash
+git tag image-2026-07-24
+git push origin image-2026-07-24
+```
+
+If you need to replace that tag later:
+
+```bash
+git tag -d image-2026-07-24
+git push origin :refs/tags/image-2026-07-24
+```
+
 ## Editing the package list
 
 Edit `packages/base.txt` when you want to add or remove tools from the image.
