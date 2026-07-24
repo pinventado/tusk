@@ -15,6 +15,7 @@ on:
         description: Ubuntu codename for the build
         required: false
         default: resolute
+
   push:
     tags:
       - "image-*"
@@ -26,12 +27,14 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+
     env:
       IMAGE_OWNER: ${{ github.event.inputs.image_owner || github.repository_owner }}
       IMAGE_NAME: ${{ github.event.inputs.image_name || '26-resolute-small-tusk' }}
       UBUNTU_CODENAME: ${{ github.event.inputs.ubuntu_codename || 'resolute' }}
+
     steps:
-      - name: Check out repo
+      - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Install build tools
@@ -41,7 +44,66 @@ jobs:
           sudo apt-get install -y debootstrap
 
       - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # mkdockerimage.sh creates the debootstrap rootfs with sudo and then
+      # tries to create "packages" as the regular Actions user.
+      #
+      # quickinstall.sh also expects sudo to exist inside the rootfs.
+      #
+      # This wrapper changes only the debootstrap invocation:
+      #   1. Include sudo in the rootfs.
+      #   2. Create a writable packages directory.
+      #
+      # All other sudo commands are passed to the real sudo command.
+      - name: Prepare build compatibility wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          WRAPPER_DIR="${RUNNER_TEMP}/tusk-build-bin"
+          mkdir -p "${WRAPPER_DIR}"
+
+          cat > "${WRAPPER_DIR}/sudo" <<'EOF'
+          #!/bin/bash
+          set -euo pipefail
+
+          REAL_SUDO="/usr/bin/sudo"
+
+          if [ "${1:-}" = "debootstrap" ]; then
+            shift
+
+            DIST="${1:?Missing Ubuntu distribution codename}"
+            TARGET="${2:?Missing debootstrap target directory}"
+            shift 2
+
+            # Install sudo in the rootfs because quickinstall.sh uses it.
+            "${REAL_SUDO}" /usr/sbin/debootstrap \
+              --include=sudo \
+              "${DIST}" \
+              "${TARGET}" \
+              "$@"
+
+            # mkdockerimage.sh subsequently runs "mkdir -p packages"
+            # as the regular GitHub Actions user.
+            "${REAL_SUDO}" mkdir -p "${TARGET}/packages"
+            "${REAL_SUDO}" chown \
+              "$(id -u):$(id -g)" \
+              "${TARGET}/packages"
+
+            exit 0
+          fi
+
+          exec "${REAL_SUDO}" "$@"
+          EOF
+
+          chmod +x "${WRAPPER_DIR}/sudo"
+
+          echo "${WRAPPER_DIR}" >> "${GITHUB_PATH}"
 
       - name: Build and publish image
         env:
