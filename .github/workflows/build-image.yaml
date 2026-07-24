@@ -7,15 +7,15 @@ on:
         description: GHCR owner or organization
         required: false
         default: pinventado
-      image_name:
-        description: Image name in GHCR
+      size:
+        description: Image size to build
         required: false
-        default: 26-resolute-small-tusk
-      ubuntu_codename:
-        description: Ubuntu codename for the build
-        required: false
-        default: resolute
-
+        default: small
+        type: choice
+        options:
+          - small
+          - big
+          - alpine
   push:
     tags:
       - "image-*"
@@ -27,21 +27,16 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-24.04
-
     env:
       IMAGE_OWNER: ${{ github.event.inputs.image_owner || github.repository_owner }}
-      IMAGE_NAME: ${{ github.event.inputs.image_name || '26-resolute-small-tusk' }}
-      UBUNTU_CODENAME: ${{ github.event.inputs.ubuntu_codename || 'resolute' }}
-
+      SIZE: ${{ github.event.inputs.size || 'small' }}
+      MS_SKIP_DOCKER_PUSH: yes
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install build tools
-        run: |
-          set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y debootstrap
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -50,75 +45,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Prepare build compatibility wrapper
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          WRAPPER_DIR="${RUNNER_TEMP}/tusk-build-bin"
-          mkdir -p "${WRAPPER_DIR}"
-
-          cat > "${WRAPPER_DIR}/sudo" <<'EOF'
-          #!/bin/bash
-          set -euo pipefail
-
-          REAL_SUDO="/usr/bin/sudo"
-
-          # Intercept the debootstrap command issued by mkdockerimage.sh.
-          if [ "${1:-}" = "debootstrap" ]; then
-            shift
-
-            DIST="${1:?Missing Ubuntu distribution codename}"
-            TARGET="${2:?Missing debootstrap target directory}"
-            shift 2
-
-            # Include sudo because quickinstall.sh expects it.
-            #
-            # Enable Ubuntu's standard repository components because
-            # packages.txt contains packages from universe and multiverse.
-            "${REAL_SUDO}" /usr/sbin/debootstrap \
-              --include=sudo \
-              --components=main,restricted,universe,multiverse \
-              "${DIST}" \
-              "${TARGET}" \
-              "$@"
-
-            # Explicitly configure all standard repository components.
-            cat <<APT_SOURCES | "${REAL_SUDO}" tee "${TARGET}/etc/apt/sources.list" >/dev/null
-          deb http://archive.ubuntu.com/ubuntu ${DIST} main restricted universe multiverse
-          deb http://archive.ubuntu.com/ubuntu ${DIST}-updates main restricted universe multiverse
-          deb http://archive.ubuntu.com/ubuntu ${DIST}-backports main restricted universe multiverse
-          deb http://security.ubuntu.com/ubuntu ${DIST}-security main restricted universe multiverse
-          APT_SOURCES
-
-            # mkdockerimage.sh later creates files under packages as the
-            # regular GitHub Actions user.
-            "${REAL_SUDO}" mkdir -p "${TARGET}/packages"
-            "${REAL_SUDO}" chown \
-              "$(id -u):$(id -g)" \
-              "${TARGET}/packages"
-
-            exit 0
-          fi
-
-          # Prevent mkdockerimage.sh from replacing the working source list
-          # with the GitHub runner's incomplete /etc/apt/sources.list.
-          if [ "${1:-}" = "tee" ] &&
-             [ "${2:-}" = "etc/apt/sources.list" ]; then
-            cat >/dev/null
-            exit 0
-          fi
-
-          # Forward every other sudo command to the real sudo executable.
-          exec "${REAL_SUDO}" "$@"
-          EOF
-
-          chmod +x "${WRAPPER_DIR}/sudo"
-          echo "${WRAPPER_DIR}" >> "${GITHUB_PATH}"
-
       - name: Build and publish image
-        env:
-          SKIP_DOCKER_LOGIN: yes
         run: |
           set -euo pipefail
-          ./mkdockerimage.sh "${UBUNTU_CODENAME}"
+          cd docker
+          ./build_tusk_images.sh -x "${SIZE}"
