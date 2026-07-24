@@ -30,7 +30,7 @@ jobs:
     env:
       IMAGE_OWNER: ${{ github.event.inputs.image_owner || github.repository_owner }}
       SIZE: ${{ github.event.inputs.size || 'small' }}
-      MS_SKIP_DOCKER_PUSH: yes
+      MS_GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -44,6 +44,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and publish image
         run: |
