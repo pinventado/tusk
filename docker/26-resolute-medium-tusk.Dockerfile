@@ -5,7 +5,7 @@ FROM ubuntu:resolute AS intermediate
 LABEL org.opencontainers.image.authors="Paul Inventado <pinventado@fullerton.edu>"
 LABEL org.opencontainers.image.title="26-resolute-small-tusk"
 LABEL org.opencontainers.image.source="https://github.com/pinventado/tusk"
-LABEL org.opencontainers.image.description="A development container based on Ubuntu 26 (Resolute) with clang/LLVM for Makefile based C++ projects; includes an unprivileged user 'tuffy' with git configured for command line usage. Localized to C.UTF-8 and set in PDT timezone."
+LABEL org.opencontainers.image.description="A development container based on Ubuntu 26 (Resolute) with clang/LLVM for Makefile based C++ projects; includes an unprivileged user 'tuffy' with git configured for command line usage. The 'medium' image includes curl and gh. Localized to C.UTF-8 and set in PDT timezone."
 
 # Set locale
 ENV LANG=C.UTF-8
