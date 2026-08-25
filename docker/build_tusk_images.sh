@@ -2,7 +2,7 @@
 #
 # Assumes you're logged into Docker's registry and GitHub's registry
 #
-# build_images.sh [big | small]
+# build_images.sh [big | medium | small]
 #
 # export MS_SKIP_PUSH="yes" to skip push to Docker and GitHub
 # 
@@ -24,8 +24,8 @@ IMAGE_OWNER="${IMAGE_OWNER:-mshafae}"
 # set -e
 
 usage () {
-    echo "build_images.sh [big|small|alpine]"
-    echo "Will build [big|small|alpine] images and push to Docker and GH registry."
+    echo "build_images.sh [big|medium|small|alpine]"
+    echo "Will build [big|medium|small|alpine] images and push to Docker and GH registry."
     echo "Assumes you're logged into Docker and GitHub."
 }
 
@@ -136,7 +136,7 @@ main () {
 
 
     if [ $# -lt 1 ]; then
-        echo "Not enough arguments. Specify big, small, or alpine."
+        echo "Not enough arguments. Specify big, medium, small, or alpine."
         echo $#
         usage
         exit 1
@@ -162,7 +162,7 @@ main () {
     fi
 
     SIZE=$1
-    if [ "x${SIZE}" != "xbig" -a "x${SIZE}" != "xsmall" -a "x${SIZE}" != "xalpine" ]; then
+    if [ "x${SIZE}" != "xbig" -a "x${SIZE}" != "xmedium" -a "x${SIZE}" != "xsmall" -a "x${SIZE}" != "xalpine" ]; then
         usage
         exit 1
     fi
