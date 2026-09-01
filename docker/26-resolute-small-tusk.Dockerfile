@@ -23,7 +23,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         git python3-pexpect \
         # gsfonts graphicsmagick libgraphicsmagick++1-dev \
         make libc6-dev libgmock-dev libgtest-dev \
-        clang clang-format clang-tidy && \
+        clang clang-format clang-tidy libclang-rt-dev && \
     apt-get clean all && \
     apt-get autoremove && \
     rm -rf /var/lib/apt/lists/* && \
